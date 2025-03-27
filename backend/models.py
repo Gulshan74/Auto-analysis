@@ -2,10 +2,10 @@ import psycopg2
 
 def create_table():
     conn = psycopg2.connect(
-        host="your-db-host.render.com",
-        database="business_db",
-        user="your-db-user",
-        password="your-db-password"
+        host="ydpg-cvhr222qgecs73d3qg50-a",
+        database="autoanalysis_db",
+        user="autoanalysis_db_user",
+        password="qaHNfDYLep42gBhQq94KNUVYQFrGolKr"
     )
     cursor = conn.cursor()
     
