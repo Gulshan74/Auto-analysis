@@ -11,7 +11,7 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 # Load Excel Data
-df = pd.read_excel("sales.csv")
+df = pd.read_excel("AUTOANALYSIS/sales.csv")
 
 # Insert Data into SQL
 for _, row in df.iterrows():

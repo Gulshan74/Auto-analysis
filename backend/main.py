@@ -15,7 +15,7 @@ def get_db_connection():
         password=os.getenv("qaHNfDYLep42gBhQq94KNUVYQFrGolKr")
     )
 
-@app.get("/sales-data")
+@app.get("/")
 def get_sales():
     conn = get_db_connection()
     cursor = conn.cursor()
