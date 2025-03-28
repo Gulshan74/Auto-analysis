@@ -37,8 +37,8 @@ def get_sales_db():
 @app.get("/get-sales-csv")
 def get_sales_csv():
     try:
-        # Adjust path: since Render’s root for backend is backend/, CSV is in ../data/
-        df = pd.read_csv("../data/sales.csv")
+        # Use "data/sales.csv" (because the "data" folder is at /app/data)
+        df = pd.read_csv("data/sales.csv")
         data = df.to_dict(orient="records")
         return {"data": data}
     except Exception as e:
