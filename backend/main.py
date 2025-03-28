@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
-from database import get_db_connection
+from .database import get_db_connection
 from dotenv import load_dotenv
 import os
 
