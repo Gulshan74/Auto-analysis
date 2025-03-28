@@ -26,12 +26,16 @@ def read_root():
 # Existing endpoint: returns data from database (if needed)
 @app.get("/get-sales-db")
 def get_sales_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM sales")
-    data = cursor.fetchall()
-    conn.close()
-    return {"data": data}
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM sales")
+        data = cursor.fetchall()
+        conn.close()
+        return {"data": data}
+    except Exception as e:
+        # Log error details (you can also use logging module)
+        return {"error": str(e)}
 
 # New endpoint: read and return data from CSV file
 @app.get("/get-sales-csv")
