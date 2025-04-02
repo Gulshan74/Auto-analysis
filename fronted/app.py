@@ -47,18 +47,16 @@
 
 import streamlit as st
 import pandas as pd
-import requests
+import altair as alt
 
-# Initialize session state for users and authentication status
+# --- Authentication Section (if needed) ---
 if "users" not in st.session_state:
-    st.session_state.users = {}  # Dictionary to store user credentials
+    st.session_state.users = {}
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# Let the user select whether to Log In or Sign Up
-auth_mode = st.sidebar.radio("Choose Option", ["Login", "Sign Up"])
-
+auth_mode = st.sidebar.radio("Choose Option", ["Login", "Sign Up"], key="auth_mode")
 if auth_mode == "Sign Up":
     st.sidebar.title("Sign Up")
     new_username = st.sidebar.text_input("New Username", key="signup_username")
@@ -69,30 +67,28 @@ if auth_mode == "Sign Up":
                 st.sidebar.error("User already exists!")
             else:
                 st.session_state.users[new_username] = new_password
-                st.sidebar.success("User created! Please switch to Login.")
+                st.sidebar.success("User created! Switch to Login.")
         else:
-            st.sidebar.error("Please enter both username and password.")
+            st.sidebar.error("Enter both username and password.")
 elif auth_mode == "Login":
     st.sidebar.title("Login")
     login_username = st.sidebar.text_input("Username", key="login_username")
     login_password = st.sidebar.text_input("Password", type="password", key="login_password")
     if st.sidebar.button("Login"):
-        # Check if the entered username exists and the password matches
         if login_username in st.session_state.users and st.session_state.users[login_username] == login_password:
             st.session_state.logged_in = True
             st.sidebar.success("Logged in!")
         else:
             st.sidebar.error("Invalid credentials!")
 
-# Prevent further code execution if the user is not logged in
 if not st.session_state.logged_in:
     st.stop()
 
-# --- Main Dashboard ---
+# --- Main Dashboard Section ---
 st.title("📊 Business Analytics Dashboard")
+st.write("Upload your dataset (CSV or Excel) for dynamic analysis:")
 
-# File uploader for dataset
-uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload File", type=["csv", "xlsx"])
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith("csv"):
@@ -100,90 +96,80 @@ if uploaded_file is not None:
         else:
             df = pd.read_excel(uploaded_file)
         st.success("File uploaded successfully!")
-        st.write("Preview:")
+        st.write("Data Preview:")
         st.dataframe(df.head())
-        st.session_state.df = df  # Store the DataFrame for analysis
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-
-# Fallback: fetch default data from the backend if no file is uploaded
-if "df" not in st.session_state:
-    st.info("No file uploaded; fetching default data from backend...")
-    BACKEND_URL = "https://auto-analysis-avbw.onrender.com"
-    try:
-        response = requests.get(f"{BACKEND_URL}/get-sales-csv")
-        response.raise_for_status()
-        data = response.json()
-        if "data" in data and isinstance(data["data"], list):
-            df = pd.DataFrame(data["data"], columns=["Date", "Product", "Revenue", "Cost", "Profit"])
-            st.dataframe(df)
-            st.session_state.df = df
-        else:
-            st.error("Unexpected API response format.")
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
-
-# If data is available, show analysis options
-if "df" in st.session_state:
-    df = st.session_state.df
-
-    st.sidebar.subheader("Choose Analysis")
-    analysis_options = st.sidebar.multiselect(
-        "Select chart types to display:",
-        options=["Line Chart", "Bar Chart", "Scatter Plot", "Histogram"],
-        default=["Line Chart"]
-    )
-
-    st.subheader("Analysis Results")
-    st.write("### Summary Statistics")
-    st.dataframe(df.describe())
-
-    if "Line Chart" in analysis_options:
-        st.write("#### Line Chart")
+        
+        # Detect column types dynamically
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+        categorical_cols = df.select_dtypes(exclude=['number']).columns.tolist()
+        
+        st.sidebar.subheader("Data Columns")
+        st.sidebar.write("Numeric Columns:", numeric_cols)
+        st.sidebar.write("Categorical Columns:", categorical_cols)
+        
+        # Provide dynamic analysis options based on detected columns
+        available_charts = []
         if numeric_cols:
+            available_charts.extend(["Line Chart", "Bar Chart", "Scatter Plot", "Histogram"])
+        if categorical_cols:
+            available_charts.append("Pie Chart")
+        
+        analysis_options = st.sidebar.multiselect(
+            "Select chart types to display:",
+            options=available_charts,
+            default=available_charts[0] if available_charts else None
+        )
+        
+        st.subheader("Analysis Results")
+        st.write("### Summary Statistics")
+        st.dataframe(df.describe(include='all'))
+        
+        # Render each selected chart dynamically
+        if "Line Chart" in analysis_options and numeric_cols:
+            st.write("#### Line Chart")
             x_axis = st.selectbox("Select X-axis", options=df.columns, key="line_x")
             y_axis = st.selectbox("Select Y-axis", options=numeric_cols, key="line_y")
             st.line_chart(df.set_index(x_axis)[y_axis])
-        else:
-            st.write("No numeric columns available for line chart.")
-
-    if "Bar Chart" in analysis_options:
-        st.write("#### Bar Chart")
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        if numeric_cols:
+            
+        if "Bar Chart" in analysis_options and numeric_cols:
+            st.write("#### Bar Chart")
             x_axis = st.selectbox("Select X-axis for bar chart", options=df.columns, key="bar_x")
             y_axis = st.selectbox("Select Y-axis for bar chart", options=numeric_cols, key="bar_y")
             st.bar_chart(df.set_index(x_axis)[y_axis])
-        else:
-            st.write("No numeric columns available for bar chart.")
-
-    if "Scatter Plot" in analysis_options:
-        st.write("#### Scatter Plot")
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        if len(numeric_cols) >= 2:
+            
+        if "Scatter Plot" in analysis_options and len(numeric_cols) >= 2:
+            st.write("#### Scatter Plot")
             x_axis = st.selectbox("Select X-axis for scatter", options=numeric_cols, key="scatter_x")
             y_axis = st.selectbox("Select Y-axis for scatter", options=[col for col in numeric_cols if col != x_axis], key="scatter_y")
-            import altair as alt
             chart = alt.Chart(df).mark_circle(size=60).encode(
                 x=x_axis,
                 y=y_axis,
                 tooltip=list(df.columns)
             ).interactive()
             st.altair_chart(chart, use_container_width=True)
-        else:
-            st.write("Not enough numeric columns for scatter plot.")
-
-    if "Histogram" in analysis_options:
-        st.write("#### Histogram")
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        if numeric_cols:
+            
+        if "Histogram" in analysis_options and numeric_cols:
+            st.write("#### Histogram")
             selected_col = st.selectbox("Select column for histogram", options=numeric_cols, key="hist_col")
-            import altair as alt
             chart = alt.Chart(df).mark_bar().encode(
                 alt.X(selected_col, bin=True),
                 y='count()'
             )
             st.altair_chart(chart, use_container_width=True)
-        else:
-            st.write("No numeric columns available for histogram.")
+            
+        if "Pie Chart" in analysis_options and categorical_cols:
+            st.write("#### Pie Chart")
+            selected_col = st.selectbox("Select column for pie chart", options=categorical_cols, key="pie_col")
+            pie_data = df[selected_col].value_counts().reset_index()
+            pie_data.columns = [selected_col, "Count"]
+            chart = alt.Chart(pie_data).mark_arc().encode(
+                theta=alt.Theta(field="Count", type="quantitative"),
+                color=alt.Color(field=selected_col, type="nominal"),
+                tooltip=[selected_col, "Count"]
+            )
+            st.altair_chart(chart, use_container_width=True)
+            
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+else:
+    st.info("Please upload a dataset to begin analysis.")
