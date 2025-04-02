@@ -49,29 +49,52 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- Simple Authentication Section (Optional) ---
+# Initialize session state variables for authentication
+if "users" not in st.session_state:
+    st.session_state.users = {}  # A dictionary to store user credentials (username: password)
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 def login():
     st.sidebar.title("Login")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
+    username = st.sidebar.text_input("Username", key="login_username")
+    password = st.sidebar.text_input("Password", type="password", key="login_password")
     if st.sidebar.button("Login"):
-        if username == "admin" and password == "password":
+        # Check if the username exists and password matches
+        if username in st.session_state.users and st.session_state.users[username] == password:
             st.session_state.logged_in = True
             st.sidebar.success("Logged in!")
         else:
             st.sidebar.error("Invalid credentials!")
 
+def signup():
+    st.sidebar.title("Sign Up")
+    new_username = st.sidebar.text_input("New Username", key="signup_username")
+    new_password = st.sidebar.text_input("New Password", type="password", key="signup_password")
+    if st.sidebar.button("Sign Up"):
+        if new_username and new_password:
+            if new_username in st.session_state.users:
+                st.sidebar.error("User already exists!")
+            else:
+                st.session_state.users[new_username] = new_password
+                st.sidebar.success("User created! Please switch to Login to access the dashboard.")
+        else:
+            st.sidebar.error("Please enter both username and password.")
+
+# Let user choose to Login or Sign Up if not logged in
 if not st.session_state.logged_in:
-    login()
+    auth_option = st.sidebar.selectbox("Select an option", ["Login", "Sign Up"], key="auth_option")
+    if auth_option == "Login":
+        login()
+    else:
+        signup()
     st.stop()
 
 # --- Main Dashboard ---
 st.title("📊 Business Analytics Dashboard")
 
-# File uploader
+# File uploader for dataset
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
 if uploaded_file is not None:
     try:
@@ -82,11 +105,11 @@ if uploaded_file is not None:
         st.success("File uploaded successfully!")
         st.write("Preview:")
         st.dataframe(df.head())
-        st.session_state.df = df
+        st.session_state.df = df  # Store for further analysis
     except Exception as e:
         st.error(f"Error reading file: {e}")
 
-# If no file is uploaded, you can fall back to fetching data from backend if desired
+# If no file is uploaded, fallback to backend data fetching
 if "df" not in st.session_state:
     st.info("No file uploaded; fetching default data from backend...")
     BACKEND_URL = "https://auto-analysis-avbw.onrender.com"
@@ -115,7 +138,6 @@ if "df" in st.session_state:
     )
 
     st.subheader("Analysis Results")
-
     st.write("### Summary Statistics")
     st.dataframe(df.describe())
 
