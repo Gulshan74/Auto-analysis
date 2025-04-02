@@ -49,26 +49,17 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# Initialize session state variables for authentication
+# Initialize session state for users and authentication status
 if "users" not in st.session_state:
-    st.session_state.users = {}  # A dictionary to store user credentials (username: password)
+    st.session_state.users = {}  # Dictionary to store user credentials
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-def login():
-    st.sidebar.title("Login")
-    username = st.sidebar.text_input("Username", key="login_username")
-    password = st.sidebar.text_input("Password", type="password", key="login_password")
-    if st.sidebar.button("Login"):
-        # Check if the username exists and password matches
-        if username in st.session_state.users and st.session_state.users[username] == password:
-            st.session_state.logged_in = True
-            st.sidebar.success("Logged in!")
-        else:
-            st.sidebar.error("Invalid credentials!")
+# Let the user select whether to Log In or Sign Up
+auth_mode = st.sidebar.radio("Choose Option", ["Login", "Sign Up"])
 
-def signup():
+if auth_mode == "Sign Up":
     st.sidebar.title("Sign Up")
     new_username = st.sidebar.text_input("New Username", key="signup_username")
     new_password = st.sidebar.text_input("New Password", type="password", key="signup_password")
@@ -78,17 +69,23 @@ def signup():
                 st.sidebar.error("User already exists!")
             else:
                 st.session_state.users[new_username] = new_password
-                st.sidebar.success("User created! Please switch to Login to access the dashboard.")
+                st.sidebar.success("User created! Please switch to Login.")
         else:
             st.sidebar.error("Please enter both username and password.")
+elif auth_mode == "Login":
+    st.sidebar.title("Login")
+    login_username = st.sidebar.text_input("Username", key="login_username")
+    login_password = st.sidebar.text_input("Password", type="password", key="login_password")
+    if st.sidebar.button("Login"):
+        # Check if the entered username exists and the password matches
+        if login_username in st.session_state.users and st.session_state.users[login_username] == login_password:
+            st.session_state.logged_in = True
+            st.sidebar.success("Logged in!")
+        else:
+            st.sidebar.error("Invalid credentials!")
 
-# Let user choose to Login or Sign Up if not logged in
+# Prevent further code execution if the user is not logged in
 if not st.session_state.logged_in:
-    auth_option = st.sidebar.selectbox("Select an option", ["Login", "Sign Up"], key="auth_option")
-    if auth_option == "Login":
-        login()
-    else:
-        signup()
     st.stop()
 
 # --- Main Dashboard ---
@@ -105,11 +102,11 @@ if uploaded_file is not None:
         st.success("File uploaded successfully!")
         st.write("Preview:")
         st.dataframe(df.head())
-        st.session_state.df = df  # Store for further analysis
+        st.session_state.df = df  # Store the DataFrame for analysis
     except Exception as e:
         st.error(f"Error reading file: {e}")
 
-# If no file is uploaded, fallback to backend data fetching
+# Fallback: fetch default data from the backend if no file is uploaded
 if "df" not in st.session_state:
     st.info("No file uploaded; fetching default data from backend...")
     BACKEND_URL = "https://auto-analysis-avbw.onrender.com"
@@ -149,7 +146,7 @@ if "df" in st.session_state:
             y_axis = st.selectbox("Select Y-axis", options=numeric_cols, key="line_y")
             st.line_chart(df.set_index(x_axis)[y_axis])
         else:
-            st.write("No numeric columns for line chart.")
+            st.write("No numeric columns available for line chart.")
 
     if "Bar Chart" in analysis_options:
         st.write("#### Bar Chart")
@@ -159,7 +156,7 @@ if "df" in st.session_state:
             y_axis = st.selectbox("Select Y-axis for bar chart", options=numeric_cols, key="bar_y")
             st.bar_chart(df.set_index(x_axis)[y_axis])
         else:
-            st.write("No numeric columns for bar chart.")
+            st.write("No numeric columns available for bar chart.")
 
     if "Scatter Plot" in analysis_options:
         st.write("#### Scatter Plot")
@@ -189,4 +186,4 @@ if "df" in st.session_state:
             )
             st.altair_chart(chart, use_container_width=True)
         else:
-            st.write("No numeric columns for histogram.")
+            st.write("No numeric columns available for histogram.")
