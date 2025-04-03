@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base
-from auth import create_user, authenticate_user
-from models import User, Sales
+from .auth import create_user, authenticate_user
+from .models import User, Sales
 from datetime import datetime
 import uvicorn
 
