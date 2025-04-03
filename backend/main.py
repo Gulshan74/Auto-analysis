@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base
 from .auth import create_user, authenticate_user
-from .models import User, Dataset
+from .models import User
 from datetime import datetime
 import uvicorn
 
