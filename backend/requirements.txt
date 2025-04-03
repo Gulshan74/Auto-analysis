@@ -1,5 +1,8 @@
 fastapi
 uvicorn
-psycopg2
-python-dotenv
+sqlalchemy
 pandas
+python-dotenv
+bcrypt
+psycopg2-binary
+scikit-learn

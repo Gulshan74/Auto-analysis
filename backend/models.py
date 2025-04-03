@@ -1,26 +1,15 @@
-import psycopg2
+from sqlalchemy import Column, String, Integer, Date, JSON
+from database import Base
 
-def create_table():
-    conn = psycopg2.connect(
-        host="ydpg-cvhr222qgecs73d3qg50-a",
-        database="autoanalysis_db",
-        user="autoanalysis_db_user",
-        password="qaHNfDYLep42gBhQq94KNUVYQFrGolKr"
-    )
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS sales (
-        date DATE,
-        product VARCHAR(255),
-        revenue FLOAT,
-        cost FLOAT,
-        profit FLOAT
-    )
-    """)
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
+class User(Base):
+    __tablename__ = "users"
+    username = Column(String, primary_key=True, index=True)
+    password = Column(String)
 
-create_table()
+# Dynamic Dataset model that stores uploaded data as JSON
+class Dataset(Base):
+    __tablename__ = "datasets"
+    id = Column(Integer, primary_key=True, index=True)
+    owner = Column(String, index=True)       # The username of the uploader
+    upload_time = Column(Date)               # The time of upload
+    data = Column(JSON)                      # Stores the entire dataset as JSON
