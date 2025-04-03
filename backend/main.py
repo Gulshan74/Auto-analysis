@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base
 from .auth import create_user, authenticate_user
-from backend.models import User
+from models import User,Dataset
 from datetime import datetime
 import uvicorn
 
@@ -15,7 +15,7 @@ app = FastAPI()
 
 # Enable CORS (adjust allowed origins in production)
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware, 
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
