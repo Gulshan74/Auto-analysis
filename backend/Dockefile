@@ -1,15 +1,13 @@
 FROM python:3.12
 
-# Set the working directory to the root of your repository
 WORKDIR /app
 
-# Copy the entire repository into the container
+# Copy entire repository (ensure the build context is the repository root)
 COPY . .
 
-# Install backend dependencies (note the path)
-RUN pip install -r backend/requirements.txt
+RUN pip install --upgrade pip && pip install -r backend/requirements.txt
 
 EXPOSE 8000
 
-# Run the backend using the module path; note "backend.main:app"
+# Use module path "backend.main:app"
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
